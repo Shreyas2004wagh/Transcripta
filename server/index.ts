@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+require('dotenv').config(); // <-- Add this line
 
 const app = express();
 const PORT = 3001;
@@ -11,7 +12,11 @@ app.use(express.json());
 
 // Routes
 const transcriptRoutes = require('./routes/transcript');
+const summarizeRoutes = require('./routes/summarize'); 
+const qnaRoutes = require('./routes/qna');
 app.use('/api/transcript', transcriptRoutes);
+app.use('/api/summarize', summarizeRoutes); 
+app.use('/api/qna', qnaRoutes);
 
 // Test route
 app.get('/', (req, res) => {

@@ -6,8 +6,11 @@ const router = express.Router();
 
 // Path to yt-dlp.exe in the server directory
 const YTDLP_PATH = 'C:\\Users\\SHREYAS WAGH\\OneDrive\\Desktop\\Transcripta\\server\\yt-dlp.exe';
+// Note: __dirname might behave differently based on module system. In CommonJS, it gives the directory of the current file.
+const currentFileDir = path.dirname(__filename); 
 console.log('Looking for yt-dlp.exe at:', YTDLP_PATH);
-console.log('Current directory (__dirname):', __dirname);
+console.log('Current file directory:', currentFileDir);
+
 
 // Helper function to validate YouTube URL
 function isValidYouTubeUrl(url) {
@@ -110,7 +113,7 @@ router.post('/', async (req, res) => {
     }
 
     // Create temp directory for downloads
-    const tempDir = path.join(__dirname, '../temp');
+    const tempDir = path.join(currentFileDir, '../temp');
     if (!fs.existsSync(tempDir)) {
       fs.mkdirSync(tempDir, { recursive: true });
     }
@@ -170,9 +173,9 @@ router.post('/', async (req, res) => {
           end: sub.end,
           startFormatted: formatTimestamp(sub.start),
           endFormatted: formatTimestamp(sub.end),
-          text: sub.text.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+          text: sub.text.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>')
         })),
-        fullText: subtitles.map(sub => sub.text).join(' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>'),
+        fullText: subtitles.map(sub => sub.text).join(' ').replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>'),
         createdAt: new Date().toISOString()
       };
 
