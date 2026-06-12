@@ -4,7 +4,6 @@ import {
   Play,
   Clock,
   User,
-  Download,
   Sparkles,
   AlertCircle,
   RotateCcw,
@@ -39,6 +38,8 @@ interface TranscriptData {
   createdAt: string;
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+
 const App: React.FC = () => {
   const [url, setUrl] = useState('');
   const [transcript, setTranscript] = useState<TranscriptData | null>(null);
@@ -67,6 +68,10 @@ const App: React.FC = () => {
       .trim();
   };
 
+  const escapeRegExp = (text: string): string => {
+    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  };
+
   useEffect(() => {
     setIsVisible(true);
   }, []);
@@ -77,7 +82,7 @@ const App: React.FC = () => {
     setSummary(null);
 
     try {
-      const response = await fetch('http://localhost:3001/api/summarize', {
+      const response = await fetch(`${API_BASE_URL}/api/summarize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text }),
@@ -111,7 +116,7 @@ const App: React.FC = () => {
     setQnaError(null);
 
     try {
-      const response = await fetch('http://localhost:3001/api/transcript', {
+      const response = await fetch(`${API_BASE_URL}/api/transcript`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: url.trim() }),
@@ -161,7 +166,7 @@ const App: React.FC = () => {
     setQnaError(null);
 
     try {
-      const response = await fetch('http://localhost:3001/api/qna', {
+      const response = await fetch(`${API_BASE_URL}/api/qna`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -188,10 +193,11 @@ const App: React.FC = () => {
 
   const highlightText = (text: string, term: string) => {
     if (!term) return text;
-    const regex = new RegExp(`(${term})`, 'gi');
+    const regex = new RegExp(`(${escapeRegExp(term)})`, 'gi');
+    const matchRegex = new RegExp(`^${escapeRegExp(term)}$`, 'i');
     const parts = text.split(regex);
     return parts.map((part, i) =>
-      regex.test(part) ? (
+      matchRegex.test(part) ? (
         <span key={i} className="bg-gradient-to-r from-yellow-200 via-yellow-300 to-amber-300 text-amber-900 font-bold rounded-lg px-3 py-1 shadow-lg border border-yellow-400/50 animate-pulse">
           {part}
         </span>
@@ -205,7 +211,7 @@ const App: React.FC = () => {
         return (
           <ul key={index} className="list-disc list-inside space-y-2 pl-4">
             {paragraph.split('\n').map((item, i) => (
-              item.trim() && <li key={i}>{item.replace(/^[*\-]\s*/, '')}</li>
+              item.trim() && <li key={i}>{item.replace(/^[*-]\s*/, '')}</li>
             ))}
           </ul>
         );
