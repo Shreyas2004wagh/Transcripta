@@ -1,15 +1,5 @@
-# server
+# Transcripta Server
 
-To install dependencies:
+Express + TypeScript API for transcript extraction, summarization, and transcript-grounded Q&A.
 
-```bash
-bun install
-```
-
-To run:
-
-```bash
-bun run index.ts
-```
-
-This project was created using `bun init` in bun v1.2.17. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
+See the root [README.md](../README.md) for full setup, environment variables, and run commands.
