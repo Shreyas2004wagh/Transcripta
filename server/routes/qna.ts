@@ -1,20 +1,31 @@
-const express = require('express');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+import express, { Request, Response } from "express";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const router = express.Router();
 
-// Initialize the Google Generative AI client
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : "Unknown error";
 
 // POST /api/qna - Answer a question based on a transcript
-router.post('/', async (req, res) => {
+router.post("/", async (req: Request, res: Response) => {
   try {
     const { transcript, question } = req.body;
 
-    if (!transcript || !question) {
-      return res.status(400).json({ error: 'Transcript and question are required.' });
+    if (
+      !transcript ||
+      !question ||
+      typeof transcript !== "string" ||
+      typeof question !== "string"
+    ) {
+      return res.status(400).json({ error: "Transcript and question are required." });
     }
+
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ error: "GEMINI_API_KEY is not configured." });
+    }
+
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
 
     const prompt = `
       You are an expert Q&A assistant. Your task is to answer the user's question based *only* on the provided video transcript.
@@ -42,12 +53,12 @@ router.post('/', async (req, res) => {
     res.json({ answer });
 
   } catch (error) {
-    console.error('Gemini API Q&A error:', error);
+    console.error("Gemini API Q&A error:", error);
     res.status(500).json({
-      error: 'Failed to get an answer from the AI model.',
-      details: error.message
+      error: "Failed to get an answer from the AI model.",
+      details: getErrorMessage(error)
     });
   }
 });
 
-module.exports = router;
+export default router;
