@@ -1,9 +1,11 @@
-import { execFileSync } from "child_process";
+import { execFile as execFileCallback } from "child_process";
 import express, { Request, Response } from "express";
 import fs from "fs";
 import path from "path";
+import { promisify } from "util";
 
 const router = express.Router();
+const execFile = promisify(execFileCallback);
 
 interface Subtitle {
   start: number;
@@ -31,9 +33,10 @@ const getProcessErrorOutput = (error: unknown) => {
     error &&
     typeof error === "object" &&
     "stderr" in error &&
-    Buffer.isBuffer((error as { stderr?: unknown }).stderr)
+    (Buffer.isBuffer((error as { stderr?: unknown }).stderr) ||
+      typeof (error as { stderr?: unknown }).stderr === "string")
   ) {
-    return (error as { stderr: Buffer }).stderr.toString("utf8").trim();
+    return (error as { stderr: Buffer | string }).stderr.toString().trim();
   }
 
   return getErrorMessage(error);
@@ -210,29 +213,25 @@ router.post("/", async (req: Request, res: Response) => {
   const outputPath = path.join(tempDir, `${videoId}.%(ext)s`);
 
   try {
-    const infoOutput = execFileSync(
-      ytdlpPath,
-      ["--dump-json", "--no-download", url],
-      { encoding: "utf8" }
-    );
+    const { stdout: infoOutput } = await execFile(ytdlpPath, [
+      "--dump-json",
+      "--no-download",
+      url,
+    ]);
     const videoInfo = JSON.parse(infoOutput) as VideoInfo;
 
-    execFileSync(
-      ytdlpPath,
-      [
-        "--write-auto-sub",
-        "--write-sub",
-        "--sub-lang",
-        "en",
-        "--sub-format",
-        "vtt",
-        "--skip-download",
-        "-o",
-        outputPath,
-        url,
-      ],
-      { encoding: "utf8" }
-    );
+    await execFile(ytdlpPath, [
+      "--write-auto-sub",
+      "--write-sub",
+      "--sub-lang",
+      "en",
+      "--sub-format",
+      "vtt",
+      "--skip-download",
+      "-o",
+      outputPath,
+      url,
+    ]);
 
     const subtitleFiles = listSubtitleFiles(tempDir, videoId);
 
