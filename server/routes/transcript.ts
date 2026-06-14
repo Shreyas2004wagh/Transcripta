@@ -6,6 +6,8 @@ import { promisify } from "util";
 
 const router = express.Router();
 const execFile = promisify(execFileCallback);
+const YTDLP_TIMEOUT_MS = Number(process.env.YTDLP_TIMEOUT_MS) || 120000;
+const YTDLP_MAX_BUFFER = 10 * 1024 * 1024;
 
 interface Subtitle {
   start: number;
@@ -40,6 +42,26 @@ const getProcessErrorOutput = (error: unknown) => {
   }
 
   return getErrorMessage(error);
+};
+
+const isProcessTimeout = (error: unknown) =>
+  Boolean(
+    error &&
+      typeof error === "object" &&
+      ("killed" in error || "signal" in error) &&
+      ((error as { killed?: boolean }).killed ||
+        (error as { signal?: string | null }).signal === "SIGTERM")
+  );
+
+const runYtDlp = async (ytdlpPath: string, args: string[]) => {
+  const { stdout } = await execFile(ytdlpPath, args, {
+    encoding: "utf8",
+    maxBuffer: YTDLP_MAX_BUFFER,
+    timeout: YTDLP_TIMEOUT_MS,
+    windowsHide: true,
+  });
+
+  return stdout;
 };
 
 const resolveYtDlpPath = () => {
@@ -213,14 +235,14 @@ router.post("/", async (req: Request, res: Response) => {
   const outputPath = path.join(tempDir, `${videoId}.%(ext)s`);
 
   try {
-    const { stdout: infoOutput } = await execFile(ytdlpPath, [
+    const infoOutput = await runYtDlp(ytdlpPath, [
       "--dump-json",
       "--no-download",
       url,
     ]);
     const videoInfo = JSON.parse(infoOutput) as VideoInfo;
 
-    await execFile(ytdlpPath, [
+    await runYtDlp(ytdlpPath, [
       "--write-auto-sub",
       "--write-sub",
       "--sub-lang",
@@ -272,6 +294,13 @@ router.post("/", async (req: Request, res: Response) => {
   } catch (error) {
     const details = getProcessErrorOutput(error);
     console.error("Transcript extraction error:", details);
+
+    if (isProcessTimeout(error)) {
+      return res.status(504).json({
+        error: "Transcript extraction timed out",
+        details: `yt-dlp exceeded ${YTDLP_TIMEOUT_MS}ms`,
+      });
+    }
 
     if (details.includes("Video unavailable")) {
       return res.status(404).json({ error: "Video not found or unavailable" });
