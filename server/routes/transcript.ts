@@ -1,4 +1,5 @@
 import { execFile as execFileCallback } from "child_process";
+import { randomUUID } from "crypto";
 import express, { Request, Response } from "express";
 import fs from "fs";
 import path from "path";
@@ -194,16 +195,12 @@ const listSubtitleFiles = (tempDir: string, videoId: string) =>
     .readdirSync(tempDir)
     .filter((file) => file.startsWith(videoId) && file.endsWith(".vtt"));
 
-const removeTempFiles = (tempDir: string, videoId: string) => {
+const removeTempDir = (tempDir: string) => {
   if (!fs.existsSync(tempDir)) {
     return;
   }
 
-  for (const file of fs.readdirSync(tempDir)) {
-    if (file.startsWith(videoId)) {
-      fs.rmSync(path.join(tempDir, file), { force: true });
-    }
-  }
+  fs.rmSync(tempDir, { recursive: true, force: true });
 };
 
 router.post("/", async (req: Request, res: Response) => {
@@ -230,7 +227,7 @@ router.post("/", async (req: Request, res: Response) => {
     });
   }
 
-  const tempDir = path.resolve(process.cwd(), "temp");
+  const tempDir = path.resolve(process.cwd(), "temp", randomUUID());
   fs.mkdirSync(tempDir, { recursive: true });
   const outputPath = path.join(tempDir, `${videoId}.%(ext)s`);
 
@@ -315,7 +312,7 @@ router.post("/", async (req: Request, res: Response) => {
       details,
     });
   } finally {
-    removeTempFiles(tempDir, videoId);
+    removeTempDir(tempDir);
   }
 });
 
