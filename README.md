@@ -113,6 +113,8 @@ Backend (`server/.env`):
 | --- | --- | --- | --- |
 | `PORT` | No | `3001` | Express server port. |
 | `GEMINI_API_KEY` | Yes | none | Google Gemini API key used for summary and Q&A. |
+| `CORS_ORIGIN` | No | local Vite origins | Comma-separated list of frontend origins allowed to call the API. |
+| `JSON_BODY_LIMIT` | No | `1mb` | Maximum accepted JSON request body size. |
 | `YTDLP_PATH` | No | auto-detected | Absolute path to `yt-dlp` or `yt-dlp.exe`. |
 
 Frontend (`client/.env.local`):

@@ -11,9 +11,26 @@ dotenv.config();
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3001;
+const JSON_BODY_LIMIT = process.env.JSON_BODY_LIMIT || "1mb";
+const DEFAULT_CORS_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173"];
+const ALLOWED_CORS_ORIGINS = (process.env.CORS_ORIGIN || DEFAULT_CORS_ORIGINS.join(","))
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
-app.use(cors());
-app.use(express.json());
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin || ALLOWED_CORS_ORIGINS.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error("Origin is not allowed by CORS"));
+    },
+  })
+);
+app.use(express.json({ limit: JSON_BODY_LIMIT }));
 
 app.use("/api/transcript", transcriptRoutes);
 app.use("/api/summarize", summarizeRoutes);
