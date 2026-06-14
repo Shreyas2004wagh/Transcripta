@@ -12,6 +12,6 @@
     "skipLibCheck": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["index.ts", "routes/**/*.ts"],
+  "include": ["*.ts", "routes/**/*.ts"],
   "exclude": ["dist", "node_modules"]
 }
