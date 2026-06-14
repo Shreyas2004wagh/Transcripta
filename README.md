@@ -115,6 +115,8 @@ Backend (`server/.env`):
 | `GEMINI_API_KEY` | Yes | none | Google Gemini API key used for summary and Q&A. |
 | `CORS_ORIGIN` | No | local Vite origins | Comma-separated list of frontend origins allowed to call the API. |
 | `JSON_BODY_LIMIT` | No | `1mb` | Maximum accepted JSON request body size. |
+| `RATE_LIMIT_WINDOW_MS` | No | `900000` | API rate-limit window in milliseconds. |
+| `RATE_LIMIT_MAX_REQUESTS` | No | `60` | Maximum API requests allowed per IP per window. |
 | `YTDLP_PATH` | No | auto-detected | Absolute path to `yt-dlp` or `yt-dlp.exe`. |
 
 Frontend (`client/.env.local`):
