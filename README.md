@@ -117,6 +117,9 @@ Backend (`server/.env`):
 | `JSON_BODY_LIMIT` | No | `1mb` | Maximum accepted JSON request body size. |
 | `RATE_LIMIT_WINDOW_MS` | No | `900000` | API rate-limit window in milliseconds. |
 | `RATE_LIMIT_MAX_REQUESTS` | No | `60` | Maximum API requests allowed per IP per window. |
+| `MAX_SUMMARY_CHARS` | No | `120000` | Maximum transcript length accepted by the summary endpoint. |
+| `MAX_QNA_TRANSCRIPT_CHARS` | No | `120000` | Maximum transcript length accepted by the Q&A endpoint. |
+| `MAX_QNA_QUESTION_CHARS` | No | `1000` | Maximum question length accepted by the Q&A endpoint. |
 | `YTDLP_PATH` | No | auto-detected | Absolute path to `yt-dlp` or `yt-dlp.exe`. |
 
 Frontend (`client/.env.local`):

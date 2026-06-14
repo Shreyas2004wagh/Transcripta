@@ -2,6 +2,7 @@ import express, { Request, Response } from "express";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const router = express.Router();
+const MAX_SUMMARY_CHARS = Number(process.env.MAX_SUMMARY_CHARS) || 120000;
 
 const getErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : "Unknown error";
@@ -12,6 +13,13 @@ router.post("/", async (req: Request, res: Response) => {
 
     if (!text || typeof text !== "string" || text.trim().length === 0) {
       return res.status(400).json({ error: "Transcript text is required." });
+    }
+
+    if (text.length > MAX_SUMMARY_CHARS) {
+      return res.status(413).json({
+        error: "Transcript text is too long to summarize.",
+        details: `Maximum supported length is ${MAX_SUMMARY_CHARS} characters.`,
+      });
     }
 
     if (!process.env.GEMINI_API_KEY) {

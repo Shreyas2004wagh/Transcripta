@@ -2,6 +2,8 @@ import express, { Request, Response } from "express";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const router = express.Router();
+const MAX_QNA_TRANSCRIPT_CHARS = Number(process.env.MAX_QNA_TRANSCRIPT_CHARS) || 120000;
+const MAX_QNA_QUESTION_CHARS = Number(process.env.MAX_QNA_QUESTION_CHARS) || 1000;
 
 const getErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : "Unknown error";
@@ -18,6 +20,20 @@ router.post("/", async (req: Request, res: Response) => {
       typeof question !== "string"
     ) {
       return res.status(400).json({ error: "Transcript and question are required." });
+    }
+
+    if (transcript.length > MAX_QNA_TRANSCRIPT_CHARS) {
+      return res.status(413).json({
+        error: "Transcript is too long for Q&A.",
+        details: `Maximum supported transcript length is ${MAX_QNA_TRANSCRIPT_CHARS} characters.`,
+      });
+    }
+
+    if (question.length > MAX_QNA_QUESTION_CHARS) {
+      return res.status(413).json({
+        error: "Question is too long.",
+        details: `Maximum supported question length is ${MAX_QNA_QUESTION_CHARS} characters.`,
+      });
     }
 
     if (!process.env.GEMINI_API_KEY) {
