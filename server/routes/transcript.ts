@@ -82,6 +82,10 @@ const resolveYtDlpPath = () => {
 const isValidYouTubeUrl = (url: string) => {
   try {
     const parsed = new URL(url);
+    if (!["http:", "https:"].includes(parsed.protocol)) {
+      return false;
+    }
+
     const hostname = parsed.hostname.replace(/^www\./, "");
     return ["youtube.com", "m.youtube.com", "youtu.be"].includes(hostname);
   } catch {
