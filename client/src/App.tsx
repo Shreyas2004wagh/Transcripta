@@ -40,6 +40,43 @@ interface TranscriptData {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
 
+const parseApiResponse = async (response: Response): Promise<unknown> => {
+  const contentType = response.headers.get('content-type') || '';
+
+  if (contentType.includes('application/json')) {
+    return response.json();
+  }
+
+  const text = await response.text();
+  return { error: text || response.statusText };
+};
+
+const getApiError = (data: unknown, fallback: string): string => {
+  if (
+    data &&
+    typeof data === 'object' &&
+    'error' in data &&
+    typeof (data as { error?: unknown }).error === 'string'
+  ) {
+    return (data as { error: string }).error;
+  }
+
+  return fallback;
+};
+
+const getStringField = (data: unknown, field: string): string => {
+  if (
+    data &&
+    typeof data === 'object' &&
+    field in data &&
+    typeof (data as Record<string, unknown>)[field] === 'string'
+  ) {
+    return (data as Record<string, string>)[field];
+  }
+
+  return '';
+};
+
 const App: React.FC = () => {
   const [url, setUrl] = useState('');
   const [transcript, setTranscript] = useState<TranscriptData | null>(null);
@@ -88,11 +125,15 @@ const App: React.FC = () => {
         body: JSON.stringify({ text }),
       });
 
-      const data = await response.json();
+      const data = await parseApiResponse(response);
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to generate summary');
+        throw new Error(getApiError(data, 'Failed to generate summary'));
       }
-      setSummary(data.summary);
+      const generatedSummary = getStringField(data, 'summary');
+      if (!generatedSummary) {
+        throw new Error('Summary response was missing expected content.');
+      }
+      setSummary(generatedSummary);
     } catch (err) {
       setSummaryError(err instanceof Error ? err.message : 'An unknown error occurred.');
     } finally {
@@ -121,17 +162,21 @@ const App: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: url.trim() }),
       });
-      const data = await response.json();
+      const data = await parseApiResponse(response);
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch transcript');
+        throw new Error(getApiError(data, 'Failed to fetch transcript'));
       }
+      if (!data || typeof data !== 'object') {
+        throw new Error('Transcript response was missing expected content.');
+      }
+      const transcriptData = data as TranscriptData;
       const cleanedTranscript = {
-        ...data,
-        subtitles: data.subtitles?.map((subtitle: Subtitle) => ({
+        ...transcriptData,
+        subtitles: transcriptData.subtitles?.map((subtitle: Subtitle) => ({
           ...subtitle,
           text: cleanTranscriptText(subtitle.text)
         })) || [],
-        fullText: data.fullText ? cleanTranscriptText(data.fullText) : ''
+        fullText: transcriptData.fullText ? cleanTranscriptText(transcriptData.fullText) : ''
       };
       setTranscript(cleanedTranscript);
       if (cleanedTranscript.fullText) {
@@ -175,11 +220,15 @@ const App: React.FC = () => {
         }),
       });
 
-      const data = await response.json();
+      const data = await parseApiResponse(response);
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to get an answer');
+        throw new Error(getApiError(data, 'Failed to get an answer'));
       }
-      setAnswer(data.answer);
+      const generatedAnswer = getStringField(data, 'answer');
+      if (!generatedAnswer) {
+        throw new Error('Answer response was missing expected content.');
+      }
+      setAnswer(generatedAnswer);
     } catch (err) {
       setQnaError(err instanceof Error ? err.message : 'An unknown error occurred.');
     } finally {
